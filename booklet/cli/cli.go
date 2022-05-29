@@ -12,30 +12,42 @@ import (
 
 var (
 	Verbose = kingpin.Flag("verbose", "Verbose mode.").Short('v').Bool()
-	Dir     = kingpin.Arg("dir", "Directory of the booklet. Default is the current working directory.").Default(".").String()
-	Fonts   = kingpin.Flag("fonts", "The fonts directory. Default is '_fonts'.").Short('f').Default("_fonts").String()
+
+	PullCmd = kingpin.Command("pull", "Pull the docker image.")
+
+	CompileCmd   = kingpin.Command("compile", "Compile the book.")
+	CompileDir   = CompileCmd.Arg("dir", "Directory of the booklet. Default is the current working directory.").Default(".").String()
+	CompileFonts = CompileCmd.Flag("fonts", "The fonts directory. Default is '_fonts'.").Short('f').Default("_fonts").String()
 )
 
-func Parse() {
+func Parse() string {
 	var err error
 	_ = err
 
 	kingpin.Version(pkg.Version)
-	kingpin.Parse()
+	switch kingpin.Parse() {
+	case PullCmd.FullCommand():
+		if *Verbose {
+			fmt.Println("Command:", PullCmd.FullCommand())
+		}
+		return PullCmd.FullCommand()
+	case CompileCmd.FullCommand():
+		*CompileDir, _ = filepath.Abs(*CompileDir)
+		if !filepath.IsAbs(*CompileFonts) {
+			*CompileFonts = filepath.Join(*CompileDir, *CompileFonts)
+		}
 
-	*Dir, _ = filepath.Abs(*Dir)
-
-	if !filepath.IsAbs(*Fonts) {
-		*Fonts = filepath.Join(*Dir, *Fonts)
+		if *Verbose {
+			fmt.Println("Command:", CompileCmd.FullCommand())
+			tb := tablewriter.NewWriter(os.Stdout)
+			tb.SetHeader([]string{"Arg", "Value"})
+			tb.Append([]string{"Verbose", fmt.Sprintf("%t", *Verbose)})
+			tb.Append([]string{"Dir", *CompileDir})
+			tb.Append([]string{"Fonts", *CompileFonts})
+			tb.Render()
+			fmt.Println()
+		}
+		return PullCmd.FullCommand()
 	}
-
-	if *Verbose {
-		tb := tablewriter.NewWriter(os.Stdout)
-		tb.SetHeader([]string{"Arg", "Value"})
-		tb.Append([]string{"Verbose", fmt.Sprintf("%t", *Verbose)})
-		tb.Append([]string{"Dir", *Dir})
-		tb.Append([]string{"Fonts", *Fonts})
-		tb.Render()
-		fmt.Println()
-	}
+	return ""
 }
