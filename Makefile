@@ -1,4 +1,7 @@
 build:
-	go build
+	@cd booklet; go build -o ../booklet.exe
 
-.PHONY: build
+fmt:
+	@cd booklet; go fmt ./...
+
+.PHONY: build fmt
