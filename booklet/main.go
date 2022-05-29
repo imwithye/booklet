@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"booklet/cli"
+)
 
 func main() {
-	fmt.Println("Hello World!")
+	cli.Parse()
 }
